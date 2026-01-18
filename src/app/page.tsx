@@ -1,65 +1,92 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+import { nanoid } from "nanoid";
+
+const ANIMALS = [
+  "lion",
+  "tiger",
+  "bear",
+  "eagle",
+  "shark",
+  "wolf",
+  "fox",
+  "owl",
+  "panther",
+  "leopard",
+];
+
+const generateRandomUsername = () => {
+  const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+
+  return `anonymous-${word}-${nanoid(5)}`;
+};
+
+const STORAGE_KEY = "noira-username";
 
 export default function Home() {
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    const main = () => {
+      let storedUsername = localStorage.getItem(STORAGE_KEY);
+
+      if (!storedUsername) {
+        storedUsername = generateRandomUsername();
+        localStorage.setItem(STORAGE_KEY, storedUsername);
+      }
+
+      setUsername(storedUsername);
+    };
+
+    main();
+  });
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-black">
+      <div className="w-full max-w-md">
+        {/* Header Section */}
+        <div className="text-center mb-12">
+          <div className="mb-4">
+            <div className="inline-block px-3 py-1 border border-gray-700 rounded-full text-xs text-gray-400 uppercase tracking-wider mb-4">
+              Privacy-First Messaging
+            </div>
+          </div>
+          <h1 className="text-6xl font-bold mb-4 text-white tracking-tight">
+            Noira
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-400 text-base leading-relaxed">
+            Minimal. Secure. Anonymous. Self-destructing.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* main create room invoke */}
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 shadow-2xl">
+          {/* identity */}
+          <div className="mb-8">
+            <label className="block text-xs font-mono font-semibold text-gray-500 mb-3 uppercase tracking-widest">
+              Your Anonymous Identity
+            </label>
+            <div className="w-full bg-black border border-gray-800 rounded-lg p-4 flex items-center justify-start group hover:border-gray-700 transition-colors">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-3 animate-pulse"></div>
+              <span className="font-mono text-sm text-gray-300">
+                {username || "generating..."}
+              </span>
+            </div>
+            
+          </div>
+
+          {/* create room button */}
+          <div className="w-full">
+            <button className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 uppercase tracking-wider text-sm">
+              Create Secure Room
+            </button>
+          </div>
+
+          {/* Footer info */}
+          
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
