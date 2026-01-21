@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { nanoid } from "nanoid";
 
+
+
+import Loader from "./loader";
+
+import { useCreateRoom } from "@/modules/hooks/useCreateRoom";
+
 const ANIMALS = [
   "lion",
   "tiger",
@@ -26,6 +32,7 @@ const STORAGE_KEY = "noira-username";
 
 export default function Home() {
   const [username, setUsername] = useState("");
+ 
 
   useEffect(() => {
     const main = () => {
@@ -40,7 +47,22 @@ export default function Home() {
     };
 
     main();
-  });
+  }, []);
+
+  const { mutateAsync: createRoomMutation, isPending } = useCreateRoom();
+
+  const handleCreateRoom = async () => {
+    try {
+      const res = await createRoomMutation();
+      console.log("Room created:", res);
+    } catch (error) {
+      console.error("Error creating room:", error);
+    }
+  };
+
+  if (isPending) {
+    return <Loader message="Creating secure room..." />;
+  }
 
   return (
     <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-black">
@@ -73,18 +95,17 @@ export default function Home() {
                 {username || "generating..."}
               </span>
             </div>
-            
           </div>
 
           {/* create room button */}
           <div className="w-full">
-            <button className="w-full bg-white hover:bg-gray-100 text-black font-semibold py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 uppercase tracking-wider text-sm">
+            <button
+              onClick={() => handleCreateRoom()}
+              className="w-full bg-white text-black font-semibold py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg active:scale-95 uppercase tracking-wider text-sm cursor-pointer hover:bg-black hover:text-gray-400"
+            >
               Create Secure Room
             </button>
           </div>
-
-          {/* Footer info */}
-          
         </div>
       </div>
     </main>
