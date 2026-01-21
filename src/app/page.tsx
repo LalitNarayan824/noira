@@ -1,55 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { nanoid } from "nanoid";
-
-
-
+import { useUsername } from "@/modules/hooks/useUsername";
 import Loader from "./loader";
 
 import { useCreateRoom } from "@/modules/hooks/useCreateRoom";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-const ANIMALS = [
-  "lion",
-  "tiger",
-  "bear",
-  "eagle",
-  "shark",
-  "wolf",
-  "fox",
-  "owl",
-  "panther",
-  "leopard",
-];
 
-const generateRandomUsername = () => {
-  const word = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+const Page = ()=>{
+  return (
+    <Suspense>
 
-  return `anonymous-${word}-${nanoid(5)}`;
-};
+      <Home/>
+    </Suspense>
+  )
+}
 
-const STORAGE_KEY = "noira-username";
 
-export default function Home() {
-  const [username, setUsername] = useState("");
- 
 
-  useEffect(() => {
-    const main = () => {
-      let storedUsername = localStorage.getItem(STORAGE_KEY);
-
-      if (!storedUsername) {
-        storedUsername = generateRandomUsername();
-        localStorage.setItem(STORAGE_KEY, storedUsername);
-      }
-
-      setUsername(storedUsername);
-    };
-
-    main();
-  }, []);
+function Home() {
+  const { username } = useUsername();
 
   const { mutateAsync: createRoomMutation, isPending } = useCreateRoom();
+
+  const searchParams = useSearchParams();
+
+  const wasDestroyed = searchParams.get("destroyed") === "true";
+  const error = searchParams.get("error");
 
   const handleCreateRoom = async () => {
     try {
@@ -67,6 +45,27 @@ export default function Home() {
   return (
     <main className="w-full min-h-screen flex flex-col justify-center items-center p-4 bg-black">
       <div className="w-full max-w-md">
+        {wasDestroyed && (
+          <div className="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded-md mb-6">
+            <strong className="font-semibold">Room Closed:</strong> The room
+            you were in has been closed and all messages have been deleted.
+          </div>
+        )}
+
+        {error == "room_not_found" && (
+          <div className="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded-md mb-6">
+            <strong className="font-semibold">Error:</strong> The room you are
+            trying to access does not exist.
+          </div>
+        )}
+
+        {error == "room_full" && (
+          <div className="bg-red-900 border border-red-700 text-red-300 px-4 py-3 rounded-md mb-6">
+            <strong className="font-semibold">Error:</strong> The room you are
+            trying to join is full.
+          </div>
+        ) }
+
         {/* Header Section */}
         <div className="text-center mb-12">
           <div className="mb-4">
@@ -111,3 +110,6 @@ export default function Home() {
     </main>
   );
 }
+
+
+export default Page;
