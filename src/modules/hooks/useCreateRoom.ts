@@ -20,7 +20,7 @@ export const useCreateRoom = () =>{
     },
     onSuccess:(data)=>{
       router.push(`/room/${data.roomId}`);
-      console.log("Room created successfully:", data);
+      // console.log("Room created successfully:", data);
     }
   });
 

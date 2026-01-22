@@ -27,43 +27,48 @@ const RoomsPage = () => {
   const roomId = params.roomId as string;
   const { username } = useUsername();
   const router = useRouter();
+ const bottomRef = useRef<HTMLDivElement | null>(null);
 
-  const { data:ttlData } = useQuery({
-    queryKey:["ttl" , roomId],
-    queryFn: async()=>{
-      const res = await client.room.ttl.get({query:{roomId}})
-      return res.data
+
+
+  const { data: ttlData } = useQuery({
+    queryKey: ["ttl", roomId],
+    queryFn: async () => {
+      const res = await client.room.ttl.get({ query: { roomId } });
+      return res.data;
     },
-  })
+  });
 
-  useEffect(()=>{
-    if(ttlData?.ttl !== undefined){
-      setTimeRemaining(ttlData.ttl)
+  
+
+
+  useEffect(() => {
+    if (ttlData?.ttl !== undefined) {
+      setTimeRemaining(ttlData.ttl);
     }
-  }, [ttlData])
+  }, [ttlData]);
 
-  useEffect(()=>{
-    if(timeRemaining === null||timeRemaining<0) return;
+  useEffect(() => {
+    if (timeRemaining === null || timeRemaining < 0) return;
 
-    if(timeRemaining === 0){
-      router.replace("/?destroyed=true" );
+    if (timeRemaining === 0) {
+      router.replace("/?destroyed=true");
       return;
     }
 
-    const interval = setInterval(()=>{
-      setTimeRemaining((prev)=>{
-        if(prev===null || prev<=1) {
+    const interval = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev === null || prev <= 1) {
           clearInterval(interval);
           return 0;
         }
 
-        return prev-1;
-      })
-    }, 1000)
+        return prev - 1;
+      });
+    }, 1000);
 
-    return ()=>clearInterval(interval);
-
-  } , [timeRemaining , router])
+    return () => clearInterval(interval);
+  }, [timeRemaining, router]);
 
   const handleCopyRoomId = async () => {
     if (!navigator.clipboard) {
@@ -89,93 +94,92 @@ const RoomsPage = () => {
     inputRef.current?.focus();
   };
 
-  const { data: messages, isLoading , refetch:refetchMessages } = useGetRoomMessages(roomId);
+  const {
+    data: messages,
+    isLoading,
+    refetch: refetchMessages,
+  } = useGetRoomMessages(roomId);
 
   useRealtime({
-    channels:[roomId],
-    events: ["chat.destroy" , "chat.message"],
-    onData:({event})=>{
-      if(event === "chat.message"){
-        refetchMessages()
+    channels: [roomId],
+    events: ["chat.destroy", "chat.message"],
+    onData: ({ event }) => {
+      if (event === "chat.message") {
+        refetchMessages();
       }
 
-      if(event === "chat.destroy"){
-        router.replace("/?destroyed=true" );
-
-
-
+      if (event === "chat.destroy") {
+        router.replace("/?destroyed=true");
       }
-    }
-  })
-
-  const {mutate:destroyRoom, isPending:isDestroying} = useMutation({
-    mutationFn: async()=>{
-      await client.room.delete(null ,{query:{roomId}})
     },
-  })
+  });
 
+  const { mutate: destroyRoom, isPending: isDestroying } = useMutation({
+    mutationFn: async () => {
+      await client.room.delete(null, { query: { roomId } });
+    },
+  });
 
-
+  useEffect(() => {
+  bottomRef?.current?.scrollIntoView({
+    behavior: "smooth",
+  });
+}, [messages?.messages.length]);
 
   return (
-    <main className="w-full h-screen bg-black text-white flex flex-col">
-      <header className="border-b border-gray-800 pb-6 pt-4 shrink-0">
-        <div className="max-w-4xl mx-auto flex gap-6 justify-around">
-          {/* room id and copy button*/}
-          <div className="mb-6">
+    <main className="w-full min-h-screen bg-black text-white flex flex-col">
+      {/* Header */}
+      <header className="sticky top-0 z-20 bg-black/80 backdrop-blur border-b border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 py-6 flex items-center justify-between gap-6">
+          {/* Room Info */}
+          <div>
             <span className="text-xs font-mono font-semibold text-gray-500 uppercase tracking-widest">
               Room ID
             </span>
-
-            <div className="flex items-center gap-3 mt-3">
+            <div className="flex items-center gap-3 mt-2">
               <span className="font-mono text-lg text-green-400 break-all">
                 {roomId}
               </span>
               <button
-                onClick={() => handleCopyRoomId()}
-                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs font-mono text-gray-300 hover:bg-gray-800 hover:border-gray-700 transition-colors hover:cursor-pointer"
+                onClick={handleCopyRoomId}
+                className="px-3 py-2 bg-gray-900 border border-gray-800 rounded-lg text-xs font-mono text-gray-300 hover:bg-gray-800 transition"
               >
                 {copyStatus}
               </button>
             </div>
           </div>
 
-          {/* self destruct timer */}
-          <div className="mb-6">
-            <span className="text-xs font-mono font-semibold text-gray-500 uppercase tracking-widest block mb-2">
+          {/* Timer */}
+          <div className="text-center">
+            <span className="text-xs font-mono font-semibold text-gray-500 uppercase tracking-widest block mb-1">
               Self Destruct In
             </span>
-
-            <div className="flex items-center gap-3 mt-5">
-              <span
-                className={`font-mono text-2xlfont-bold
-                ${
-                  timeRemaining !== null && timeRemaining <= 30
-                    ? "animate-pulse text-red-400"
-                    : "text-amber-400"
-                }
-                
-                `}
-              >
-                {formatTimeRemaining(timeRemaining) ?? "--:--"}
-              </span>
-            </div>
+            <span
+              className={`font-mono text-2xl font-bold ${
+                timeRemaining !== null && timeRemaining <= 30
+                  ? "animate-pulse text-red-400"
+                  : "text-amber-400"
+              }`}
+            >
+              {formatTimeRemaining(timeRemaining) ?? "--:--"}
+            </span>
           </div>
 
-          {/* self destruct */}
-          <div className="flex items-center justify-between pt-4">
-            <button onClick={()=>destroyRoom()} className="px-4 py-2 bg-red-900/20 border border-red-800 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-900/40 hover:border-red-700 transition-all active:scale-95 hover:cursor-pointer">
-              {isDestroying ? "Destroying..." : "Self Destruct"}
-            </button>
-          </div>
+          {/* Destroy Button */}
+          <button
+            onClick={() => destroyRoom()}
+            className="px-4 py-2 bg-red-900/20 border border-red-800 rounded-lg text-sm font-semibold text-red-400 hover:bg-red-900/40 transition active:scale-95"
+          >
+            {isDestroying ? "Destroying..." : "Self Destruct"}
+          </button>
         </div>
       </header>
 
-      {/* messages section */}
-      <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
-        <div className="max-w-4xl mx-auto space-y-4">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 scrollbar-hide">
+        <div className="max-w-5xl mx-auto space-y-4">
           {messages?.messages.length === 0 && !isLoading && (
-            <p className="text-gray-600 italic text-center py-8">
+            <p className="text-gray-600 italic text-center py-12">
               No messages yet. Start the conversation!
             </p>
           )}
@@ -188,69 +192,71 @@ const RoomsPage = () => {
                 className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-3 rounded-lg ${
-                    isCurrentUser
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-gray-800 text-gray-100 rounded-bl-none"
-                  }`}
+                  className={`max-w-[85%] sm:max-w-md lg:max-w-lg px-4 py-3 rounded-xl
+                ${
+                  isCurrentUser
+                    ? "bg-blue-600 text-white rounded-br-none"
+                    : "bg-gray-800 text-gray-100 rounded-bl-none"
+                }`}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <span
-                      className={`text-xs font-semibold ${
-                        isCurrentUser ? "text-blue-200" : "text-gray-400"
-                      }`}
-                    >
-                      {isCurrentUser ? "You" : msg.sender}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-around">
-                    <p className="text-sm wrap-break-words mr-4">{msg.text}</p>
                   <span
-                    className={`text-xs mt-1 block ${
-                      isCurrentUser ? "text-blue-200" : "text-gray-500"
-                    }`}
+                    className={`text-xs font-semibold block mb-1
+                  ${isCurrentUser ? "text-blue-200" : "text-gray-400"}`}
                   >
-                    {new Date(msg.timestamp).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                    {isCurrentUser ? "You" : msg.sender}
                   </span>
+
+                  <div className="flex items-end justify-between gap-3">
+                    <p className="text-sm wrap=break-words">{msg.text}</p>
+                    <span
+                      className={`text-[10px] whitespace-nowrap
+                    ${isCurrentUser ? "text-blue-200" : "text-gray-500"}`}
+                    >
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
                   </div>
                 </div>
               </div>
             );
           })}
+          <div ref={bottomRef} />
+
         </div>
       </div>
 
-      {/* input section - sticky at bottom */}
-      <div className="border-t border-gray-800 bg-black p-4 shrink-0">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3">
-            <input
-              autoFocus
-              ref={inputRef}
-              type="text"
-              value={input}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && input.trim() != "") {
-                  sendMessage({ text: input.trim() });
-                  setInput("");
-                  inputRef.current?.focus();
-                }
-              }}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type a message..."
-              className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-gray-700"
-            />
-            <button
-              disabled={!input.trim() || isPending}
-              onClick={() => handleSendMessage()}
-              className="px-4 py-3 bg-blue-900/20 border border-blue-800 rounded-lg text-sm font-semibold text-blue-400 hover:bg-blue-900/40 hover:border-blue-500 transition-all active:scale-95 hover:cursor-pointer disabled:opacity-50"
-            >
-              {isPending ? "Sending..." : "Send"}
-            </button>
-          </div>
+      {/* Input */}
+      <div className="sticky bottom-0 border-t border-gray-800 bg-black px-4 py-3 sm:py-4 shrink-0">
+        <div className="max-w-5xl mx-auto flex gap-3">
+          <input
+            autoFocus
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && input.trim()) {
+                sendMessage({ text: input.trim() });
+                setInput("");
+                inputRef.current?.focus();
+              }
+            }}
+            placeholder="Type a message..."
+            className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-3 text-sm
+                   focus:outline-none focus:border-gray-700"
+          />
+
+          <button
+            disabled={!input.trim() || isPending}
+            onClick={handleSendMessage}
+            className="px-4 py-3 bg-blue-900/20 border border-blue-800 rounded-lg text-sm font-semibold text-blue-400
+                   hover:bg-blue-900/40 hover:border-blue-500 transition
+                   active:scale-95 disabled:opacity-50"
+          >
+            {isPending ? "Sending..." : "Send"}
+          </button>
         </div>
       </div>
     </main>
